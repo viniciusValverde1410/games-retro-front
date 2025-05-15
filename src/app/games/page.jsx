@@ -4,7 +4,7 @@ import styles from "./games.module.css";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import Link from "next/link"
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Games() {
@@ -14,6 +14,7 @@ export default function Games() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Variáveis do input
   const [searchGames, setSearchGames] = useState("");
   const [searchPlatform, setSearchPlatform] = useState("");
 
@@ -23,13 +24,45 @@ export default function Games() {
   const name = searchParams.get("name") || "";
   const platform = searchParams.get("platform") || "";
 
+  const updateUrl = (params) => {
+    const newParams = new URLSearchParams();
+
+    if (params.name) {
+      newParams.set("name", params.name);
+    }
+
+    if (params.platform) {
+      newParams.set("platform", params.platform);
+    }
+
+    router.push(
+      `/games${newParams.toString() ? `?${newParams.toString()}` : ""}`
+    );
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+
+    updateUrl({ name: searchGames || "", platform: searchPlatform || "" });
+  };
+
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        setLoading(true);
-        const response = await axios.get(`${url}/games`);
+        // Construir URL com parâmetros de busca
+        let apiUrl = `${url}/games`;
+        const queryParams = new URLSearchParams();
+
+        if (name) queryParams.append("name", name);
+        if (platform) queryParams.append("platform", platform);
+
+        if (queryParams.toString()) {
+          apiUrl += `?${queryParams.toString()}`;
+        }
+
+        const response = await axios.get(apiUrl);
         setGames(response.data.games);
-        setLoading(false);
+        setError(null);
       } catch (error) {
         console.error("Erro ao buscar os jogos na API");
         setError(
@@ -42,7 +75,7 @@ export default function Games() {
     fetchGames();
     setSearchGames(name);
     setSearchPlatform(platform);
-  }, [name,platform]);
+  }, [name, platform]);
 
   return (
     <div className={styles.container}>
@@ -55,7 +88,7 @@ export default function Games() {
         </div>
 
         <div className={styles.searchContainer}>
-          <form className={styles.searchForm}>
+          <form onSubmit={handleSearch} className={styles.searchForm}>
             <div className={styles.searchFields}>
               <div className={styles.searchField}>
                 <label htmlFor="name">Nome do Game:</label>
