@@ -1,10 +1,11 @@
-
 "use client";
 
 import styles from "./games.module.css";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Games() {
   const url = process.env.NEXT_PUBLIC_API_URL;
@@ -16,12 +17,18 @@ export default function Games() {
   const [searchGames, setSearchGames] = useState("");
   const [searchPlatform, setSearchPlatform] = useState("");
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const name = searchParams.get("name") || "";
+  const platform = searchParams.get("platform") || "";
+
   useEffect(() => {
     const fetchGames = async () => {
       try {
         setLoading(true);
         const response = await axios.get(`${url}/games`);
-        setGames(response.data);
+        setGames(response.data.games);
         setLoading(false);
       } catch (error) {
         console.error("Erro ao buscar os jogos na API");
@@ -33,15 +40,17 @@ export default function Games() {
     };
 
     fetchGames();
-  }, []);
+    setSearchGames(name);
+    setSearchPlatform(platform);
+  }, [name,platform]);
 
   return (
     <div className={styles.container}>
       <main className={styles.main}>
         <div className={styles.gamesHeader}>
-          <h1 className={styles.gamesTitle}>Games</h1>
+          <h1 className={styles.gamesTitle}>Games Retrô</h1>
           <p className={styles.gamesSubtitle}>
-            Explore nossa coleção de games e seus recordes!
+            Explore nossa coleção de games retrô e seus recordes!
           </p>
         </div>
 
@@ -86,6 +95,40 @@ export default function Games() {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Lista de Games */}
+        <div className={styles.gameGrid}>
+          {games.length === 0 ? (
+            <div className={styles.noGames}>
+              <p>Nenhum game encontrado.</p>
+            </div>
+          ) : (
+            games.map((game) => (
+              <div key={game.id} className={styles.gameCard}>
+                <div className={styles.gameCardHeader}>
+                  <h3 className={styles.gameTitle}>{game.name}</h3>
+                </div>
+                <div className={styles.gameCardBody}>
+                  <p>
+                    <strong>Plataforma:</strong> {game.platform}
+                  </p>
+                  <p>
+                    <strong>ID:</strong> {game.id.substring(0, 8)}...
+                  </p>
+                  <p>
+                    <strong>Criado em:</strong>{" "}
+                    {new Date(game.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className={styles.gameCardFooter}>
+                  <Link href={`/games/${game.id}`} className={styles.gameLink}>
+                    Ver detalhes
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </main>
     </div>
